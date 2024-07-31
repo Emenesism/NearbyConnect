@@ -1,0 +1,76 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(uuid()) @map("id")
+  name        String
+  email       String     @unique
+  hash        String
+  location    String?
+
+  images     Image[]    @relation("UserImages")
+
+
+  // Correct relation definitions
+  likes       Like[]     @relation("UserLikes")
+  likedBy     Like[]     @relation("LikedByUser")
+
+  dislikes    Dislike[]  @relation("UserDislikes")
+  dislikedBy  Dislike[]  @relation("DislikedByUser")
+
+  @@map("user") // Maps the model to a database table named `user`
+}
+
+model Image {
+  id       String @id @default(uuid()) @map("id")
+  filename String
+
+  // Foreign key to User model
+  user     User   @relation("UserImages", fields: [user], references: [id])
+  userId   String
+
+  @@map("image")
+}
+
+
+model Like {
+  id         String   @id @default(uuid()) @map("id")
+  
+  // Correctly refer to fields in the 'User' model
+  user        User     @relation("UserLikes", fields: [userId], references: [id])
+  likedBy     User     @relation("LikedByUser", fields: [likedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign key fields in this model
+  userId      String
+  likedById   String
+
+  @@map("like") // Maps the model to a database table named `like`
+}
+
+model Dislike {
+  id          String   @id @default(uuid()) @map("id")
+  
+  // Correctly refer to fields in the 'User' model
+  user         User     @relation("UserDislikes", fields: [userId], references: [id])
+  dislikedBy   User     @relation("DislikedByUser", fields: [dislikedById], references: [id])
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Foreign key fields in this model
+  userId       String
+  dislikedById String
+
+  @@map("dislike") // Maps the model to a database table named `dislike`
+}

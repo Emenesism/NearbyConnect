@@ -1,0 +1,29 @@
+version: '3'
+services:
+  nodejs:
+    image: node:latest
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "${PORT}:${PORT}"
+    command: 
+      - "/bin/sh"
+      - "-c"
+      - "npm install && npm run dev"
+    container_name: 'rinoker-api'
+    restart: 'always'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - rinoker
+
+
+
+networks:
+  rinoker:
+    external: true
+
