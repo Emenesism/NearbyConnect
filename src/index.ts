@@ -43,3 +43,79 @@ const PORT = process.env.SERVER_PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+import express from "express";
+import http from "http";
+import logger from "./cors/logger";
+import WebSocket from "ws";
+import { validateClientJWT } from "./cors/jwt";
+
+const wss = new WebSocket.Server({ port: 3000 }); // Set path to "/ws"
+
+// Store connected clients
+const clients = new Map();
+
+wss.on("connection", (ws) => {
+  logger.info("New WebSocket connection");
+
+  // Handle incoming messages from clients
+  ws.on("message", (message) => {
+    const data = JSON.parse(message);
+
+    switch (data.type) {
+      case "handshake":
+        handleHandshake(ws, data.token);
+        break;
+      case "like":
+        handleLikeEvent(ws, data.userId, data.likedById);
+        break;
+      default:
+        logger.info("Unknown message type:", data.type);
+    }
+  });
+
+  // Handle disconnection
+  ws.on("close", () => {
+    logger.info("WebSocket connection closed");
+    // Remove client from the list
+    for (let [key, value] of clients) {
+      if (value === ws) {
+        clients.delete(key);
+        break;
+      }
+    }
+  });
+
+  // Handle errors
+  ws.on("error", (error) => {
+    logger.error("WebSocket error:", error);
+  });
+});
+
+function handleHandshake(ws, token) {
+  const user = validateClientJWT(token);
+  // Authenticate the user and store the WebSocket connection
+  if (user) {
+    clients.set(user.email, ws);
+    logger.info(`User ${user.email} connected`);
+  } else {
+    ws.close();
+    logger.info("Invalid token. Connection closed.");
+  }
+}
+
+function handleLikeEvent(ws, userId, likedById) {
+  // Notify the liked user
+  const likedUserSocket = clients.get(userId);
+  if (likedUserSocket) {
+    likedUserSocket.send(
+      JSON.stringify({
+        type: "notification",
+        data: {
+          userId: userId,
+        },
+      })
+    );
+    logger.info(`User ${userId} liked by ${likedById}`);
+  }
+}

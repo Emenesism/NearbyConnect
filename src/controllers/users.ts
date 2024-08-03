@@ -1,3 +1,5 @@
+import { getTokenSourceMapRange } from "typescript";
+import { calculateDistance } from "../cors/locationHelper";
 import logger from "../cors/logger";
 import dbContext from "./dbContext";
 
@@ -5,21 +7,23 @@ export const createUser = async (
   name: string,
   email: string,
   hash: string,
-  location?: string
+  lat: number,
+  lon: number
 ) => {
   try {
-    logger.info("Attempting to create a user: %s", email);
+    logger.info(`Attempting to create a user: ${email}`);
 
     const newUser = await dbContext.user.create({
       data: {
         name,
         email,
         hash,
-        location,
+        lat,
+        lon,
       },
     });
 
-    logger.info("User created successfully: %s", newUser.email);
+    logger.info(`User created successfully: ${newUser.email}`);
 
     return {
       success: true,
@@ -27,7 +31,7 @@ export const createUser = async (
       data: newUser,
     };
   } catch (error) {
-    logger.error("Error creating user: %s, Error: %s", email, error.message);
+    logger.error(`Error creating user: ${email}, Error: ${error.message}`);
 
     return {
       success: false,
@@ -59,7 +63,7 @@ export const getAllUsers = async () => {
       data: users,
     };
   } catch (error) {
-    logger.error("Error retrieving all users: %s", error.message);
+    logger.error(`Error retrieving all users: ${error.message}`);
 
     return {
       success: false,
@@ -71,14 +75,14 @@ export const getAllUsers = async () => {
 
 export const getUserById = async (id: string) => {
   try {
-    logger.info("Attempting to retrieve user with ID: %s", id);
+    logger.info(`Attempting to retrieve user with ID: ${id}`);
 
     const user = await dbContext.user.findUnique({
       where: { id: id },
     });
 
     if (!user) {
-      logger.warn("User not found with ID: %s", id);
+      logger.warn(`User not found with ID: ${id}`);
 
       return {
         success: false,
@@ -86,7 +90,7 @@ export const getUserById = async (id: string) => {
       };
     }
 
-    logger.info("Successfully retrieved user with ID: %s", id);
+    logger.info(`Successfully retrieved user with ID: ${id}`);
 
     return {
       success: true,
@@ -94,9 +98,7 @@ export const getUserById = async (id: string) => {
     };
   } catch (error) {
     logger.error(
-      "Error retrieving user with ID: %s, Error: %s",
-      id,
-      error.message
+      `Error retrieving user with ID: ${id}, Error: ${error.message}`
     );
 
     return {
@@ -107,16 +109,25 @@ export const getUserById = async (id: string) => {
   }
 };
 
-export const getUserByEmail = async (email) => {
+export const getUserByEmail = async (email: string) => {
   try {
-    logger.info("Attempting to retrieve user with email: %s", email);
+    logger.info(`Attempting to retrieve user with email: ${email}`);
 
     const user = await dbContext.user.findUnique({
-      where: { email: email},
+      where: { email: email },
+      select : {
+        images : true,
+        name : true,
+        email : true,
+        lat : true,
+        lon : true,
+        hash : true,
+        id : true
+      }
     });
 
     if (!user) {
-      logger.warn("User not found with email: %s", email);
+      logger.warn(`User not found with email: ${email}`);
 
       return {
         success: false,
@@ -124,7 +135,7 @@ export const getUserByEmail = async (email) => {
       };
     }
 
-    logger.info("Successfully retrieved user with email: %s", email);
+    logger.info(`Successfully retrieved user with email: ${email}`);
 
     return {
       success: true,
@@ -132,14 +143,128 @@ export const getUserByEmail = async (email) => {
     };
   } catch (error) {
     logger.error(
-      "Error retrieving user with email: %s, Error: %s",
-      email,
-      error.message
+      `Error retrieving user with email: ${email}, Error: ${error.message}`
     );
 
     return {
       success: false,
       message: "Something went wrong while retrieving the user",
+      error: error.message,
+    };
+  }
+};
+
+export const findNearbyUsers = async (userId: string): Promise<any> => {
+  try {
+    logger.info(`Attempting to find nearby users for user ID: ${userId}`);
+
+    const currentUser = await dbContext.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!currentUser) {
+      logger.warn(`User not found with ID: ${userId}`);
+
+      return {
+        success: false,
+        message: "User not found",
+      };
+    }
+
+    logger.info(`Successfully retrieved user with ID: ${userId}`);
+
+    const { lat: userLat, lon: userLon } = currentUser;
+
+    const users = await dbContext.user.findMany({
+      where: {
+        id: {
+          not: userId, // Exclude the current user
+        },
+      },
+      select: {
+        id : true,
+        name: true, // Select only the name field
+        email: true, // Select only the email field
+        lat: true,
+        lon: true,
+        images: true, // Include related images
+      },
+    });
+
+    logger.info(`Retrieved ${users.length} users from the database`);
+
+    const nearbyUsers = users.filter((user) => {
+      const distance = calculateDistance(userLat, userLon, user.lat, user.lon);
+      return distance < 10;
+    });
+
+    logger.info(
+      `Found ${nearbyUsers.length} nearby users within 10 kilometers of user ID: ${userId}`
+    );
+
+    return {
+      success: true,
+      data: nearbyUsers,
+    };
+  } catch (error) {
+    logger.error(
+      `Error finding nearby users for user ID: ${userId}, Error: ${error.message}`
+    );
+
+    return {
+      success: false,
+      message: "Something went wrong while finding nearby users",
+      error: error.message,
+    };
+  }
+};
+
+export const updateUser = async (
+  email: string,
+  name?: string,
+  hash?: string,
+  lat?: number,
+  lon?: number
+) => {
+  try {
+    logger.info(`Attempting to update user with email: ${email}`);
+
+    const existingUser = await dbContext.user.findUnique({
+      where: { email },
+    });
+
+    if (!existingUser) {
+      logger.warn(`User with email ${email} not found`);
+
+      return {
+        success: false,
+        message: `User with email ${email} not found`,
+      };
+    }
+
+    const updatedUser = await dbContext.user.update({
+      where: { email },
+      data: {
+        name: name ?? existingUser.name,
+        hash: hash ?? existingUser.hash,
+        lat: lat ?? existingUser.lat,
+        lon: lon ?? existingUser.lon,
+      },
+    });
+
+    logger.info(`User updated successfully: ${updatedUser.email}`);
+
+    return {
+      success: true,
+      message: "User updated successfully",
+      data: updatedUser,
+    };
+  } catch (error) {
+    logger.error(`Error updating user: ${email}, Error: ${error.message}`);
+
+    return {
+      success: false,
+      message: "Something went wrong while updating the user",
       error: error.message,
     };
   }

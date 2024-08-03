@@ -17,7 +17,7 @@ const options = {
   swaggerDefinition,
   apis: [
     "./src/routes/admin/*.ts",
-    "./src/routes/clients/*.ts",
+    "./src/routes/client/*.ts",
     "./src/routes/files/*.ts",
   ],
 };

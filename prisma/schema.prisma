@@ -11,22 +11,21 @@ datasource db {
 
 model User {
   id         String     @id @default(uuid()) @map("id")
-  name        String
-  email       String     @unique
-  hash        String
-  location    String?
-
+  name       String
+  email      String     @unique
+  hash       String
+  lat        Float
+  lon        Float
   images     Image[]    @relation("UserImages")
 
-
   // Correct relation definitions
-  likes       Like[]     @relation("UserLikes")
-  likedBy     Like[]     @relation("LikedByUser")
+  likes      Like[]     @relation("UserLikes")
+  likedBy    Like[]     @relation("LikedByUser")
 
-  dislikes    Dislike[]  @relation("UserDislikes")
-  dislikedBy  Dislike[]  @relation("DislikedByUser")
+  dislikes   Dislike[]  @relation("UserDislikes")
+  dislikedBy Dislike[]  @relation("DislikedByUser")
 
-  @@map("user") // Maps the model to a database table named `user`
+  @@map("user") 
 }
 
 model Image {
@@ -34,7 +33,7 @@ model Image {
   filename String
 
   // Foreign key to User model
-  user     User   @relation("UserImages", fields: [user], references: [id])
+  user     User   @relation("UserImages", fields: [userId], references: [id])
   userId   String
 
   @@map("image")

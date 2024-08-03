@@ -1,55 +1,10 @@
 import { NextFunction, Response, Request } from "express";
-import { validateAdminJWT, validateClientJWT} from "./jwt";
-import { getAdminByEmail } from "../controller/adminController";
-import { AuthenticatedRequest } from "../interfaces/authenticatedRequest";
-import { getRequestInfoByPhoneNumber } from "../controller/requstInfoController";
-
-export const protectAdmin = async (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ) => {
-    const bearer = req.headers.authorization;
-  
-    if (!bearer) {
-      res.status(401);
-      res.json({ message: "Not Authorized" });
-      return;
-    }
-  
-    const [, token] = bearer.split(" ");
-    if (!token) {
-      res.status(401);
-      res.json({ message: "Not Authorized" });
-      return;
-    }
-  
-    let user = validateAdminJWT(token);
-    if (!user) {
-      res.status(401);
-      res.json({ message: "Not Authorized" });
-      return;
-    }
-  
-    let admin = await getAdminByEmail(user.email);
-  
-    if (!admin) {
-      res.status(401);
-      res.json({ message: "Not Authorized" });
-      return;
-    }
-  
-    req.user = {
-      email : user.email ,
-      phoneNumber : "0"
-    };
-    next();
-  };
-  
-
+import { validateClientJWT } from "./jwt";
+import { protectedRequest } from "../interface/protectedRequest";
+import { getUserByEmail } from "../controllers/users";
 
 export const protectClient = async (
-  req: AuthenticatedRequest,
+  req: protectedRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -75,7 +30,7 @@ export const protectClient = async (
     return;
   }
 
-  let requestInfo : any = await getRequestInfoByPhoneNumber(user.phoneNumber);
+  let requestInfo : any = await getUserByEmail(user.email);
 
   if (!requestInfo) {
     res.status(401);
@@ -84,8 +39,7 @@ export const protectClient = async (
   }
 
   req.user = {
-    email : "user.email" ,
-    phoneNumber : String(user.phoneNumber)
+    email : user.email
   }
   next();
 };

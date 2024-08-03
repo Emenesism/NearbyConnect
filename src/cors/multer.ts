@@ -1,14 +1,14 @@
-import fs from "fs";
-import multer = require("multer");
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
+  import fs from "fs";
+  import multer = require("multer");
+  import path from "path";
+  import { v4 as uuidv4 } from "uuid";
 
 let storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    if (!fs.existsSync(path.join(__dirname, "../public/images"))) {
-      fs.mkdirSync(path.join(__dirname, "../public"));
+    if (!fs.existsSync(path.join(__dirname, "../../public/images"))) {
+      fs.mkdirSync(path.join(__dirname, "../../public"));
     }
-    let dest = path.join(__dirname, "../public/images");
+    let dest = path.join(__dirname, "../../public/images");
     if (!fs.existsSync(dest)) {
       fs.mkdirSync(dest);
     }
