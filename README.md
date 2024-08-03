@@ -48,7 +48,13 @@ To run the project, please follow these steps:
      npx prisma migrate dev --name <migration-name>
      ```
 
-6. **Start the Development Server**:
+6. **Seed the Database**:
+   - Run the seed command to populate the database with initial data:
+     ```bash
+     npm run seed
+     ```
+
+7. **Start the Development Server**:
    - Start the server using the following command:
      ```bash
      npm run dev
