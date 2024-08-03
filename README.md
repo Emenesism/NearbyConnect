@@ -1,20 +1,12 @@
 # NearbyConnect
 
-Welcome to the **NearbyConnect** backend repository! This project is designed to provide a simple website with login and registration features using NodeJS, Express, Prisma, MySQL, and more.
+Welcome to the **NearbyConnect** backend repository! This project is designed to provide a simple website with login and registration features using NodeJS, Express, Prisma, MySQL, and more. **NearbyConnect** is a backend application built with NodeJS and Express, featuring a simple HTML frontend. This project supports user registration, login, and profile management, with functionalities to explore nearby users and interact in real-time.
 
 ---
 
 ## Project Description
 
 NearbyConnect allows users to register, log in, and interact with other users through likes and dislikes. Users can upload multiple avatar images, provide a bio, and select their location from a map. The application leverages WebSockets for real-time notifications when a user receives likes from others.
-
-### Key Features
-
-- **User Authentication**: Implemented using JWT for secure access.
-- **User Profiles**: Create profiles with multiple images and geolocation.
-- **Like/Dislike Functionality**: Connect with users by liking or disliking their profiles.
-- **Nearby Users**: Filter users based on location proximity.
-- **WebSocket Notifications**: Receive live notifications when liked by another user.
 
 ### Schema Overview
 
@@ -72,11 +64,18 @@ To run the project, please follow these steps:
 
 ---
 
-ROUTE FOR SERVE USER:
-/login
-/register
-/user/neaby
-/profile
+### Available Routes
 
+Below are the available routes that serve user functionalities:
+
+- **User Authentication**:
+  - `GET /login`: Login to the application.
+  - `GET /register`: Register a new user.
+
+- **User Management**:
+  - `GET /user/nearby`: Fetch a list of nearby users.
+  - `GET /profile`: Update user profile information.
+
+---
 
 Feel free to reach out if you have any questions or need further assistance. Happy coding!
